@@ -1,0 +1,13 @@
+mkdir -p assignments/assignment2
+
+{
+    echo "Version"
+    aarch64-linux-gnu-gcc --version
+
+    echo "Configuration (-v)"
+    aarch64-linux-gnu-gcc -v 2>&1
+
+    echo "Sysroot"
+    aarch64-linux-gnu-gcc --print-sysroot
+} > assignments/assignment2/cross-compile.txt
+
