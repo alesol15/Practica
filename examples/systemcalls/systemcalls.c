@@ -9,6 +9,7 @@
 
 
 /**
+ *Alejandra Solorzano
  * @param cmd the command to execute with system()
  * @return true if the command in @param cmd was executed
  *   successfully using the system() call, false if an error occurred,
