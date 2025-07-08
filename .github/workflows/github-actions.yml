@@ -8,25 +8,28 @@ on:
   pull_request:
     branches:
       - '*'
+
 jobs:
   unit-test:
-    runs-on: ubuntu-latest
+    container: cuaesd/aesd-autotest:24-unit-test
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: git submodule update --init --recursive
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu make build-essential
       - name: Run unit test
         run: ./unit-test.sh
 
   full-test:
-    runs-on: ubuntu-latest
+    container: cuaesd/aesd-autotest:24-assignment3
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Checkout submodules
         run: git submodule update --init --recursive
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu make build-essential qemu-system-arm qemu-efi libncurses-dev bc bison flex libssl-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu make build-essential qemu-system-arm qemu-efi-aarch64 libncurses-dev bc bison flex libssl-dev
       - name: Run full test
         run: ./full-test.sh
