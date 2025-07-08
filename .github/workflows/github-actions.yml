@@ -1,32 +1,47 @@
 name: assignment-test
-on:
-    push:
-        tags-ignore:
-            - '*'
-        branches:
-            - '*'
-    pull_request: 
-         branches: 
-            - '*'
-jobs:
 
-build:
+on:
+  push:
+    tags-ignore:
+      - '*'
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  unit-test:
     runs-on: ubuntu-latest
     container:
       image: arm64v8/ubuntu:latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y \
+            gcc-aarch64-linux-gnu \
+            make \
+            build-essential
+      - name: Run unit test
+        run: ./unit-test.sh
 
+  full-test:
+    runs-on: ubuntu-latest
+    container:
+      image: arm64v8/ubuntu:latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
       - name: Install dependencies
         run: |
           apt-get update && apt-get install -y \
             gcc-aarch64-linux-gnu \
             make \
             build-essential \
-            git \
-            curl \
-            ca-certificates \
             qemu-system-arm \
             qemu-efi \
             libncurses-dev \
@@ -34,21 +49,6 @@ build:
             bison \
             flex \
             libssl-dev
-    unit-test:
-        container: cuaesd/aesd-autotest:24-unit-test
-        runs-on: self-hosted
-        steps:
-          - uses: actions/checkout@v2
-          - name: Checkout submodules
-            run : git submodule update --init --recursive
-          - name: Run unit test
-            run: ./unit-test.sh
-    full-test:
-        container: cuaesd/aesd-autotest:24-assignment3
-        runs-on: self-hosted
-        steps:
-          - uses: actions/checkout@v2
-          - name: Checkout submodules
-            run : git submodule update --init --recursive
-          - name: Run full test
-            run: ./full-test.sh
+      - name: Run full test
+        run: ./full-test.sh
+
