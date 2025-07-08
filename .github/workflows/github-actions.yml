@@ -9,6 +9,31 @@ on:
          branches: 
             - '*'
 jobs:
+
+build:
+    runs-on: ubuntu-latest
+    container:
+      image: arm64v8/ubuntu:latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y \
+            gcc-aarch64-linux-gnu \
+            make \
+            build-essential \
+            git \
+            curl \
+            ca-certificates \
+            qemu-system-arm \
+            qemu-efi \
+            libncurses-dev \
+            bc \
+            bison \
+            flex \
+            libssl-dev
     unit-test:
         container: cuaesd/aesd-autotest:24-unit-test
         runs-on: self-hosted
