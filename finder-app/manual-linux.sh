@@ -6,15 +6,17 @@ set -e
 set -u
 
 # Variables
-OUTDIR=/tmp/aeld
+OUTDIR=${OUTDIR:-/tmp/aeld}
+ARCH=arm64
 KERNEL_REPO=git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 KERNEL_VERSION=v5.15.163
 BUSYBOX_VERSION=1_33_1
 FINDER_APP_DIR=$(realpath $(dirname $0))
-ARCH=arm64
 CROSS_COMPILE=aarch64-linux-gnu-
 
 #Optional Argument
+OUTDIR="/tmp/aeld"
+
 if [ $# -lt 1 ]
 then
     echo "Defect Directory ${OUTDIR}"
@@ -23,9 +25,23 @@ else
     echo "Especific Directory: ${OUTDIR}"
 fi
 
+OUTDIR=$(realpath "$OUTDIR")
+
+echo "Using absolute directory: ${OUTDIR}"
+
 # Create Directory 
-mkdir -p ${OUTDIR}
-cd "$OUTDIR"
+mkdir -p "${OUTDIR}"
+if [ $? -ne 0 ]; then
+    echo "Error: Directoy no created ${OUTDIR}"
+    exit 1
+fi
+
+# Change the directory
+cd "${OUTDIR}"
+if [ $? -ne 0 ]; then
+    echo "Error: Directoy no changed ${OUTDIR}"
+    exit 1
+fi
 
 # ----------- Clone and compile Kernel ----------------
 
@@ -53,34 +69,102 @@ fi
 echo "Copy image of kernel"
 cp ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ${OUTDIR}/
 
+if [ ! -f "${OUTDIR}/Image" ]; then
+    echo "❌ Error: Kernel image is not found${OUTDIR}"
+    exit 1
+else
+    echo "Kernel image OK ${OUTDIR}/Image"
+fi
+
 # ----------- Create rootfs ----------------
 
 echo "Preparing rootfs..."
-cd "$OUTDIR"
+
+cd "${OUTDIR}"
+
+# Remove existing rootfs if it exists
 if [ -d "${OUTDIR}/rootfs" ]; then
-    echo "Delete rootfs"
-    sudo rm -rf ${OUTDIR}/rootfs
+    echo "Deleting existing rootfs"
+    sudo rm -rf "${OUTDIR}/rootfs"
 fi
 
+# Create base directory structure
 mkdir -p rootfs/{bin,sbin,etc,proc,sys,usr/{bin,sbin},lib,lib64,dev,home}
+
+echo "Base rootfs structure created"
+
+#Cross-compile writer using ARM toolchain
+
+echo "Compiling writer.c for ARM architecture..."
+WRITER_SRC="${FINDER_APP_DIR}/writer.c"
+echo "DEBUG: WRITER_SRC = $WRITER_SRC"
+
+${CROSS_COMPILE}gcc -o writer "$WRITER_SRC"
+
+# Copy writer to rootfs
+cp writer "${OUTDIR}/rootfs/home/"
+echo "writer copied to rootfs/home"
+rm writer
+
+# 🔹 Copy scripts and config files from Assignment 2
+cp "${FINDER_APP_DIR}/finder.sh" \
+   "${FINDER_APP_DIR}/conf/username.txt" \
+   "${FINDER_APP_DIR}/conf/assignment.txt" \
+   "${FINDER_APP_DIR}/finder-test.sh" \
+   "${FINDER_APP_DIR}/autorun-qemu.sh" \
+   "${OUTDIR}/rootfs/home/"
+
+echo "Scripts and configuration files copied to rootfs/home"
+
+# 🔹 Update path to assignment.txt in finder-test.sh
+sed -i 's|\.\./conf/assignment.txt|conf/assignment.txt|' "${OUTDIR}/rootfs/home/finder-test.sh"
+echo "finder-test.sh updated to use conf/assignment.txt"
+
+# 🔹 autorun-qemu.sh to home
+cp "${FINDER_APP_DIR}/autorun-qemu.sh" "${OUTDIR}/rootfs/home/"
+echo "autorun-qemu.sh copied"
+
+# 🔹 Change ownership to root
+cd "${OUTDIR}/rootfs"
+echo "Adjusting file ownership..."
+sudo chown -R root:root *
+
+# 🔹 Create initramfs.cpio.gz
+echo "Creating initramfs.cpio.gz..."
+find . | cpio -H newc -ov --owner root:root | gzip > "${OUTDIR}/initramfs.cpio.gz"
+
+echo "initramfs.cpio.gz generated at ${OUTDIR}"
+
+
 
 # ----------- Cloning and compile BusyBox ----------------
 
 cd "$OUTDIR"
+
 if [ ! -d "${OUTDIR}/busybox" ]; then
     echo "Cloning BusyBox..."
-    git clone git://busybox.net/busybox.git
+    git clone https://github.com/mirror/busybox.git
     cd busybox
-    git checkout ${BUSYBOX_VERSION}
-    make distclean
-    make defconfig
+    git checkout 1_33_1
 else
     cd busybox
 fi
 
-echo "Compile and install BusyBox..."
-make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
-make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} CONFIG_PREFIX=${OUTDIR}/rootfs install
+# Limpia configuraciones previas
+make distclean
+
+# Configuración por defecto
+make defconfig
+
+# Elimina la opción que activa tc para evitar errores de compilación
+sed -i '/CONFIG_TC/d' .config
+
+# Compila BusyBox
+make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j$(nproc)
+
+#Copy to rootfs
+echo "Installing BusyBox to rootfs (requires sudo)..."
+sudo make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} CONFIG_PREFIX="${OUTDIR}/rootfs" install
 
 # ----------- Copy necessary libraries ----------------
 
