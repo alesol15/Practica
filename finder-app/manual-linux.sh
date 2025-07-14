@@ -169,13 +169,13 @@ sudo make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} CONFIG_PREFIX="${OUTDIR}/r
 # ----------- Copy necessary libraries ----------------
 
 echo "Copy necessary libraries..."
-SYSROOT=$(${CROSS_COMPILE}gcc -print-sysroot)
+SYSROOT=/usr/aarch64-linux-gnu
 
-cp -a $SYSROOT/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib || true
-cp -a $SYSROOT/lib64/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib64 || true
-cp -a $SYSROOT/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64
-cp -a $SYSROOT/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64
-cp -a $SYSROOT/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64
+sudo cp -a /usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib
+sudo cp -a /usr/aarch64-linux-gnu/lib/libm.so.6 ${OUTDIR}/rootfs/lib64
+sudo cp -a /usr/aarch64-linux-gnu/lib/libresolv.so.2 ${OUTDIR}/rootfs/lib64
+sudo cp -a /usr/aarch64-linux-gnu/lib/libc.so.6 ${OUTDIR}/rootfs/lib64
+
 
 # ----------- Crear nodos de dispositivo ----------------
 
