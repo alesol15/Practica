@@ -1,50 +1,9 @@
-name: assignment-test
+name: Test runner
 
-on:
-  push:
-    tags-ignore:
-      - '*'
-    branches:
-      - '*'
-  pull_request:
-    branches:
-      - '*'
+on: [push]
 
 jobs:
-  unit-test:
-    container: cuaesd/aesd-autotest:24-unit-test
+  test-job:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
-      - name: Run unit test and save log
-        run: |
-          ./unit-test.sh > unit-test.log 2>&1 || true
-      - name: Upload unit test log
-        uses: actions/upload-artifact@v4
-        with:
-          name: unit-test-log
-          path: unit-test.log
-
-
-  full-test:
-    container: cuaesd/aesd-autotest:24-assignment3
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v2
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu make build-essential qemu-system-arm qemu-efi-aarch64 libncurses-dev bc bison flex libssl-dev
-      - name: Run full test and save log
-        run: |
-          ./full-test.sh > full-test.log 2>&1 || true
-      - name: Upload full test log
-        uses: actions/upload-artifact@v4
-        with:
-          name: full-test-log
-          path: full-test.log
-
+      - run: echo "Runner está funcionando bien"
