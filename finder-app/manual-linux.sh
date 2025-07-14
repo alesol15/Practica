@@ -165,6 +165,9 @@ make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j$(nproc)
 #Copy to rootfs
 echo "Installing BusyBox to rootfs (requires sudo)..."
 sudo make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} CONFIG_PREFIX="${OUTDIR}/rootfs" install
+echo "#!/bin/sh" > "${OUTDIR}/rootfs/init"
+echo "/home/autorun-qemu.sh" >> "${OUTDIR}/rootfs/init"
+chmod +x "${OUTDIR}/rootfs/init"
 
 # ----------- Copy necessary libraries ----------------
 
