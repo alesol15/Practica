@@ -19,15 +19,15 @@ jobs:
         run: ./unit-test.sh
 
   full-test:
-  container: cuaesd/aesd-autotest:24-assignment3
-  runs-on: self-hosted
-  steps:
-    - uses: actions/checkout@v2
-    - name: Checkout submodules
-      run: git submodule update --init --recursive
-    - name: Instalar dependencias
-      run: |
-        apt-get update
-        apt-get install -y gcc-aarch64-linux-gnu
-    - name: Run full test
-      run: ./full-test.sh
+    container: cuaesd/aesd-autotest:24-assignment3
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      - name: Instalar dependencias
+        run: |
+          apt-get update
+          apt-get install -y gcc-aarch64-linux-gnu
+      - name: Run full test
+        run: ./full-test.sh
